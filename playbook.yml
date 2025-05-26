@@ -326,6 +326,42 @@
           GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password }}"
           GF_SECURITY_DISABLE_INITIAL_ADMIN_PASSWORD_HINT: "true"   
 
+
+    - name: Wait for Grafana to be ready
+      uri:
+        url: "http://localhost:3000"
+        status_code: 200
+        timeout: 30
+      register: grafana_status
+      retries: 10
+      delay: 5
+      until: grafana_status.status == 200
+
+    - name: Add Prometheus source for Grafana
+      community.grafana.grafana_datasource:
+        name: DS_PROMETHEUS
+        ds_type: prometheus
+        ds_url: http://prometheus:9090
+        access: proxy
+        is_default: true
+        state: present
+        grafana_url: "http://localhost:3000"
+        grafana_user: "{{ grafana_admin_user }}"
+        grafana_password: "{{ grafana_admin_password }}"
+
+    - name: Download Grafana dashboard
+      get_url:
+        url: "https://grafana.com/api/dashboards/1860/revisions/1/download"
+        dest: "/tmp/dashboard.json"
+        mode: '0644'
+
+    - name: Read dashboard
+      slurp:
+        src: "/tmp/dashboard.json"
+      register: dashboard_json
+
+
+
   handlers:
     - name: restart prometheus
       docker_container:
