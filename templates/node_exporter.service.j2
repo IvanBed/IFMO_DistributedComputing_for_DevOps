@@ -1,0 +1,29 @@
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter \
+  --collector.filesystem \
+  --collector.cpu \
+  --collector.meminfo \
+  --collector.netdev \
+  --collector.loadavg \
+  --collector.uname \
+  --collector.stat \
+  --collector.diskstats \
+  --collector.systemd \
+  --web.listen-address=:9100
+
+Restart=always
+RestartSec=5
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

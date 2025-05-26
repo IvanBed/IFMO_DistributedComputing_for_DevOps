@@ -12,3 +12,6 @@ db_wordpress_dir: "/opt/wordpress"
 db_docker_user: "ivan"
 
 db_config_dir: "{{ db_wordpress_dir }}/mysql-config"
+
+grafana_admin_user: "admin"
+grafana_admin_password: "grafana_pass"
