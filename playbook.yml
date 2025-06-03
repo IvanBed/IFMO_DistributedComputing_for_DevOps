@@ -310,7 +310,7 @@
       docker_volume:
         name: grafana_data
 
-    - name: Запуск Grafana
+    - name: Start Grafana
       community.docker.docker_container:
         name: grafana
         image: grafana/grafana
@@ -349,18 +349,41 @@
         grafana_user: "{{ grafana_admin_user }}"
         grafana_password: "{{ grafana_admin_password }}"
 
-    - name: Download Grafana dashboard
-      get_url:
-        url: "https://grafana.com/api/dashboards/1860/revisions/1/download"
-        dest: "/tmp/dashboard.json"
-        mode: '0644'
+    - name: Create folder if not exists
+      community.grafana.grafana_folder:
+        grafana_url: "http://localhost:3000"
+        grafana_user: "{{ grafana_admin_user }}"
+        grafana_password: "{{ grafana_admin_password }}"
+        title: "Monitoring node_exporter_ansible"
+        state: present
+      ignore_errors: yes   
+      tags: grafana
 
-    - name: Read dashboard
-      slurp:
-        src: "/tmp/dashboard.json"
-      register: dashboard_json
-
-
+    - name: Download Node Exporter dashboard JSON
+      uri:
+        url: "https://grafana.com/api/dashboards/1860/revisions/28/download"
+        return_content: yes
+      register: node_exporter_dashboard
+    
+    - name: Import Node Exporter dashboard into Grafana
+      uri:
+        url: "http://localhost:3000/api/dashboards/db"
+        method: POST
+        user: "{{ grafana_admin_user }}"
+        password: "{{ grafana_admin_password }}"
+        force_basic_auth: yes
+        headers:
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          dashboard: "{{ node_exporter_dashboard.content | from_json }}"
+          overwrite: true
+          inputs:
+            - name: "DS_PROMETHEUS"
+              type: "datasource"
+              pluginId: "prometheus"
+              value: "DS_PROMETHEUS"
+        status_code: 200
 
   handlers:
     - name: restart prometheus
